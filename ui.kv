@@ -1,0 +1,41 @@
+#:kivy 2.1.0
+
+<MainScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 16
+        spacing: 16
+
+        # Верхняя область: вывод информации
+        Label:
+            id: log_label
+            text: root.log_text
+            size_hint_y: 0.7
+            text_size: self.width, None
+            halign: 'left'
+            valign: 'top'
+            markup: True
+
+        # Поле ввода текстом
+        TextInput:
+            id: user_input
+            size_hint_y: 0.1
+            multiline: False
+            hint_text: 'Введите слово или команду'
+
+        # Кнопки вряд
+        BoxLayout:
+            size_hint_y: 0.2
+            spacing: 10
+
+            Button:
+                text: 'СТАРТ'
+                on_release: root.on_start()
+
+            Button:
+                text: 'ВВОД'
+                on_release: root.on_enter()
+
+            Button:
+                text: 'ВЫХОД'
+                on_release: root.on_exit()
