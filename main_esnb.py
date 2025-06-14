@@ -11,7 +11,11 @@ def study_words(word_list):
         input("Нажмите Enter для следующего слова...")
 
 def run_test(word_list):
-    """Проводит тест до тех пор, пока все слова не будут пройдены верно."""
+    """
+    Проводит тест с рандомным выбором направления:
+    - слово → перевод
+    - перевод → слово
+    """
     print("\n🧪 Этап 2. Тест на запоминание:")
 
     remaining = word_list.copy()
@@ -20,19 +24,31 @@ def run_test(word_list):
         incorrect = []
 
         for word, part, transcr, translation in remaining:
-            print(f"\nСлово: {word}")
-            answer = input("Введите перевод: ").strip().lower()
+            mode = random.choice([1, 2])  # случайный выбор направления
 
-            # Нормализация перевода
-            clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
-            clean_answer = answer.lower().strip()
+            if mode == 1:
+                print(f"\nСлово: {word}")
+                answer = input("Введите перевод: ").strip().lower()
+                clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
+                clean_answer = answer.lower().strip()
 
-            if clean_answer == clean_translation:
+                if clean_answer == clean_translation:
+                    print("✅ Верно!")
+                else:
+                    print(f"❌ Неверно. Правильный ответ: {translation}")
+                    incorrect.append((word, part, transcr, translation))
 
-                print("✅ Верно!")
             else:
-                print(f"❌ Неверно. Правильный ответ: {translation}")
-                incorrect.append((word, part, transcr, translation))
+                print(f"\nПеревод: {translation}")
+                answer = input("Введите слово на английском: ").strip().lower()
+                clean_word = word.lower().strip()
+                clean_answer = answer.lower().strip()
+
+                if clean_answer == clean_word:
+                    print("✅ Верно!")
+                else:
+                    print(f"❌ Неверно. Правильный ответ: {word} [{transcr}]")
+                    incorrect.append((word, part, transcr, translation))
 
         if incorrect:
             print(f"\n🔁 Ошибки: {len(incorrect)}. Повторим эти слова...")
@@ -40,7 +56,6 @@ def run_test(word_list):
         else:
             print("🎉 Все слова запомнены правильно!")
             return True
-
 
 def learning_loop():
     """Основной цикл обучения: запомнить → протестировать → расширить список"""
