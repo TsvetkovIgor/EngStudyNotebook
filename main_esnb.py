@@ -24,7 +24,7 @@ def run_test(word_list):
             answer = input("Введите перевод: ").strip().lower()
 
             # Нормализация перевода
-clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
+            clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
             clean_answer = answer.lower().strip()
 
             if clean_answer == clean_translation:
