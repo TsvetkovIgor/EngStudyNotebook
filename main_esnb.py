@@ -1,90 +1,80 @@
-import time
-from sqlite_esnb import get_all_words
+from kivy.app import App
+from kivy.uix.screenmanager import Screen
+from kivy.properties import StringProperty
+from sqlite_esnb import get_all_words, study_words, run_test  # адаптируем после GUI
 import random
 
-def study_words(word_list):
-    """Этап показа всех слов с переводами для запоминания"""
-    print("\n📚 Этап 1. Запоминание слов:")
-    for i, word_data in enumerate(word_list, 1):
-        word, part, transcr, translation = word_data
-        print(f"\n{i}. {word} [{transcr}] — {translation}")
-        input("Нажмите Enter для следующего слова...")
+class MainScreen(Screen):
+    log_text = StringProperty("Нажмите СТАРТ для начала")
 
-def run_test(word_list):
-    """
-    Проводит тест с рандомным выбором направления:
-    - слово → перевод
-    - перевод → слово
-    """
-    print("\n🧪 Этап 2. Тест на запоминание:")
+    def on_start(self):
+        self.all_words = get_all_words()
+        self.learned_count = 5
+        self.learned = self.all_words[:self.learned_count]
+        self.state = 'study'  # или 'test'
+        self.show_study()
 
-    remaining = word_list.copy()
-    while remaining:
-        random.shuffle(remaining)
-        incorrect = []
+    def show_study(self):
+        self.log_text = ""
+        for i, (w, _, tr, t) in enumerate(self.learned,1):
+            self.log_text += f"{i}. {w} [{tr}] — {t}\n"
+        self.log_text += "\nНажмите ВВОД, когда готовы к тесту"
 
-        for word, part, transcr, translation in remaining:
-            mode = random.choice([1, 2])  # случайный выбор направления
+    def on_enter(self):
+        text = self.ids.user_input.text.strip()
+        self.ids.user_input.text = ''
+        if self.state == 'study':
+            self.log_text += "\nТест начинается!"
+            self.state = 'test'
+            self.remaining = self.learned.copy()
+            random.shuffle(self.remaining)
+            self.next_test()
+        elif self.state == 'test':
+            self.process_answer(text)
 
-            if mode == 1:
-                print(f"\nСлово: {word}")
-                answer = input("Введите перевод: ").strip().lower()
-                clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
-                clean_answer = answer.lower().strip()
+    def next_test(self):
+        if not self.remaining:
+            self.log_text += "\n🎉 Тест пройден!"
+            self.learned_count += 1
+            self.learned = self.all_words[:self.learned_count]
+            self.state = 'study'
+            self.show_study()
+            return
+        self.current = self.remaining.pop()
+        direction = random.choice([1,2])
+        self.direction = direction
+        w, _, tr, t = self.current
+        if direction == 1:
+            self.log_text += f"\n\nСлово: {w}"
+        else:
+            self.log_text += f"\n\nПеревод: {t}"
 
-                if clean_answer == clean_translation:
-                    print("✅ Верно!")
-                else:
-                    print(f"❌ Неверно. Правильный ответ: {translation}")
-                    incorrect.append((word, part, transcr, translation))
-
+    def process_answer(self, text):
+        w, _, tr, t = self.current
+        answer = text.lower()
+        if self.direction == 1:
+            correct = t.lower().rstrip(';, .')
+            if answer == correct:
+                self.log_text += "\n✅ Верно!"
             else:
-                print(f"\nПеревод: {translation}")
-                answer = input("Введите слово на английском: ").strip().lower()
-                clean_word = word.lower().strip()
-                clean_answer = answer.lower().strip()
-
-                if clean_answer == clean_word:
-                    print("✅ Верно!")
-                else:
-                    print(f"❌ Неверно. Правильный ответ: {word} [{transcr}]")
-                    incorrect.append((word, part, transcr, translation))
-
-        if incorrect:
-            print(f"\n🔁 Ошибки: {len(incorrect)}. Повторим эти слова...")
-            remaining = incorrect
+                self.log_text += f"\n❌ Неверно! {t}"
+                self.remaining.append(self.current)
         else:
-            print("🎉 Все слова запомнены правильно!")
-            return True
+            if answer == w.lower():
+                self.log_text += "\n✅ Верно!"
+            else:
+                self.log_text += f"\n❌ Неверно! {w}"
+                self.remaining.append(self.current)
+        self.next_test()
 
-def learning_loop():
-    """Основной цикл обучения: запомнить → протестировать → расширить список"""
-    all_words = get_all_words()
-    learned_count = 5
-    learned_words = all_words[:learned_count]
+    def on_exit(self):
+        App.get_running_app().stop()
 
-    while learned_count <= len(all_words):
-        print(f"\n🔄 Текущая группа слов: {learned_count} шт.")
-        study_words(learned_words)
+class EngApp(App):
+    def build(self):
+        from kivy.lang import Builder
+        Builder.load_file('ui.kv')
+        return MainScreen()
 
-        choice = input("Начать тест? (y/n): ").strip().lower()
-        if choice != 'y':
-            print("🚪 Выход из программы.")
-            break
-
-        success = run_test(learned_words)
-        if success:
-            if learned_count >= len(all_words):
-                print("🎓 Все слова изучены! Отличная работа!")
-                break
-
-            learned_count += 1  # добавим одно слово
-            learned_words = all_words[:learned_count]
-            print(f"➕ Добавлено новое слово. Теперь изучаем {learned_count} слов.")
-        else:
-            print("🔁 Повторение слов, были ошибки...")
-
-if __name__ == "__main__":
-    print("👋 Добро пожаловать в EngStudyNotebook!")
-    print("Режим: последовательное изучение и тестирование слов.")
-    learning_loop()
+if __name__ == '__main__':
+    EngApp().run()
