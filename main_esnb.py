@@ -11,27 +11,36 @@ def study_words(word_list):
         input("Нажмите Enter для следующего слова...")
 
 def run_test(word_list):
-    """Проводит тест и возвращает True, если все ответы верны"""
+    """Проводит тест до тех пор, пока все слова не будут пройдены верно."""
     print("\n🧪 Этап 2. Тест на запоминание:")
-    random.shuffle(word_list)
 
-    incorrect = []
-    for word, part, transcr, translation in word_list:
-        print(f"\nСлово: {word}")
-        answer = input("Введите перевод: ").strip().lower()
+    remaining = word_list.copy()
+    while remaining:
+        random.shuffle(remaining)
+        incorrect = []
 
-        if answer == translation.strip().lower():
-            print("✅ Верно!")
+        for word, part, transcr, translation in remaining:
+            print(f"\nСлово: {word}")
+            answer = input("Введите перевод: ").strip().lower()
+
+            # Нормализация перевода
+clean_translation = translation.lower().replace(';', '').replace(',', '').replace('.', '').strip()
+            clean_answer = answer.lower().strip()
+
+            if clean_answer == clean_translation:
+
+                print("✅ Верно!")
+            else:
+                print(f"❌ Неверно. Правильный ответ: {translation}")
+                incorrect.append((word, part, transcr, translation))
+
+        if incorrect:
+            print(f"\n🔁 Ошибки: {len(incorrect)}. Повторим эти слова...")
+            remaining = incorrect
         else:
-            print(f"❌ Неверно. Правильный ответ: {translation}")
-            incorrect.append((word, part, transcr, translation))
+            print("🎉 Все слова запомнены правильно!")
+            return True
 
-    if incorrect:
-        print("\n🔁 Повтор слов с ошибками:")
-        return run_test(incorrect)  # рекурсивно повторяем только ошибочные слова
-    else:
-        print("🎉 Все слова запомнены правильно!")
-        return True
 
 def learning_loop():
     """Основной цикл обучения: запомнить → протестировать → расширить список"""
